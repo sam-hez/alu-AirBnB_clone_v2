@@ -135,3 +135,27 @@ class test_basemodel(unittest.TestCase):
         self.assertNotEqual(obj.id, 'changed')
         self.assertIsInstance(obj.created_at, datetime.datetime)
         self.assertNotIn('__class__', obj.__dict__)
+
+    def test_constructor_does_not_register(self):
+        """Constructing a model leaves registration to save."""
+        with patch.object(storage, 'new') as new:
+            self.value()
+        new.assert_not_called()
+
+    def test_save_registers_before_commit(self):
+        """Save registers the instance before committing changes."""
+        obj = self.value()
+        calls = []
+        with patch.object(storage, 'new',
+                          side_effect=lambda value: calls.append(value)), \
+                patch.object(storage, 'save',
+                             side_effect=lambda: calls.append('saved')):
+            obj.save()
+        self.assertEqual(calls, [obj, 'saved'])
+
+    def test_delete_delegates_to_storage(self):
+        """Model deletion uses the common storage interface."""
+        obj = self.value()
+        with patch.object(storage, 'delete') as delete:
+            obj.delete()
+        delete.assert_called_once_with(obj)

@@ -4,7 +4,7 @@ import os
 from models.base_model import BaseModel, Base
 
 if os.getenv('HBNB_TYPE_STORAGE') == 'db':
-    from sqlalchemy import Column, String, Integer, Float, ForeignKey
+    from sqlalchemy import Column, String, ForeignKey
 
 
 class City(BaseModel, Base):

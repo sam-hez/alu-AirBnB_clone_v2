@@ -35,9 +35,6 @@ class BaseModel:
             if key in ('created_at', 'updated_at') and isinstance(value, str):
                 value = datetime.fromisoformat(value)
             setattr(self, key, value)
-        if not kwargs and os.getenv('HBNB_TYPE_STORAGE') != 'db':
-            from models import storage
-            storage.new(self)
 
     def __str__(self):
         """Return the class name, ID, and instance attributes."""

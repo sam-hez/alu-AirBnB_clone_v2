@@ -32,6 +32,7 @@ class test_fileStorage(unittest.TestCase):
     def test_new(self):
         """ New object is correctly added to __objects """
         new = BaseModel()
+        storage.new(new)
         self.assertIs(storage.all()["BaseModel." + new.id], new)
 
     def test_all(self):
@@ -41,9 +42,10 @@ class test_fileStorage(unittest.TestCase):
         self.assertIsInstance(temp, dict)
 
     def test_base_model_instantiation(self):
-        """ File is not created on BaseModel save """
+        """Construction neither registers nor persists the instance."""
         new = BaseModel()
         self.assertFalse(os.path.exists(self.path))
+        self.assertEqual(storage.all(), {})
 
     def test_empty(self):
         """ Data is saved to file """
@@ -56,12 +58,14 @@ class test_fileStorage(unittest.TestCase):
     def test_save(self):
         """ FileStorage save method """
         new = BaseModel()
+        storage.new(new)
         storage.save()
         self.assertTrue(os.path.exists(self.path))
 
     def test_reload(self):
         """ Storage file is successfully loaded to __objects """
         new = BaseModel()
+        storage.new(new)
         storage.save()
         storage.all().clear()
         storage.reload()
@@ -97,6 +101,7 @@ class test_fileStorage(unittest.TestCase):
     def test_key_format(self):
         """ Key is properly formatted """
         new = BaseModel()
+        storage.new(new)
         _id = new.to_dict()['id']
         for key in storage.all().keys():
             temp = key
@@ -112,6 +117,8 @@ class test_fileStorage(unittest.TestCase):
         from models.user import User
         base = BaseModel()
         user = User()
+        storage.new(base)
+        storage.new(user)
         expected = {'User.' + user.id: user}
         self.assertEqual(storage.all(User), expected)
         self.assertEqual(storage.all('User'), expected)
@@ -121,6 +128,8 @@ class test_fileStorage(unittest.TestCase):
         """Deleting an object removes it without changing other objects."""
         first = BaseModel()
         second = BaseModel()
+        storage.new(first)
+        storage.new(second)
         first.delete()
         storage.save()
         storage.all().clear()
@@ -135,3 +144,13 @@ class test_fileStorage(unittest.TestCase):
         storage.all().clear()
         storage.close()
         self.assertIn('BaseModel.' + obj.id, storage.all())
+
+    def test_delete_missing(self):
+        """Deleting None or an absent object leaves stored data intact."""
+        saved = BaseModel()
+        saved.save()
+        missing = BaseModel()
+        storage.delete()
+        storage.delete(missing)
+        storage.delete(missing)
+        self.assertEqual(storage.all(), {'BaseModel.' + saved.id: saved})

@@ -53,6 +53,7 @@ class TestConsole(unittest.TestCase):
     def test_update_zero_in_dictionary(self):
         """A dictionary update accepts zero as a numeric value."""
         obj = Place()
+        obj.save()
         obj.number_rooms = 3
         result = self.run_command(
             'Place.update("{}", {{"number_rooms": 0}})'.format(obj.id))
@@ -65,6 +66,7 @@ class TestConsole(unittest.TestCase):
     def test_update_quoted_value(self):
         """Names containing spaces retain the complete value."""
         obj = User()
+        obj.save()
         self.run_command('update User {} first_name "Betty Smith"'.format(
             obj.id))
         self.assertEqual(obj.first_name, 'Betty Smith')
@@ -72,6 +74,7 @@ class TestConsole(unittest.TestCase):
     def test_show_and_destroy(self):
         """Dotted commands show and delete the requested instance."""
         obj = User()
+        obj.save()
         self.assertEqual(self.run_command('User.show("{}")'.format(obj.id)),
                          str(obj) + '\n')
         self.run_command('User.destroy("{}")'.format(obj.id))

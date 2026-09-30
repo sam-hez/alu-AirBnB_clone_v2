@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime
 from models import storage, storage_t
 from tests.test_db_support import DatabaseFixture
+from models.state import State
+from models.city import City
 
 
 class ModelChecks(DatabaseFixture):
@@ -98,6 +100,34 @@ class TestDBState(ModelChecks, unittest.TestCase):
     """Check state persistence."""
     model = 'State'
     field = 'name'
+
+    def test_cities_relationship(self):
+        """Cities point back to their state and exclude other states."""
+        state = self.objects['State']
+        city = self.objects['City']
+        other = State(name='Nevada')
+        other.save()
+        self.assertEqual(state.cities, [city])
+        self.assertIs(city.state, state)
+        self.assertEqual(other.cities, [])
+
+    def test_delete_cascades_to_cities(self):
+        """Deleting a reloaded state removes all of its cities."""
+        state = State(name='Nevada')
+        state.save()
+        for name in ('Reno', 'Las Vegas'):
+            City(name=name, state_id=state.id).save()
+        state_id = state.id
+        storage.close()
+        state = storage.all(State)['State.' + state_id]
+        state.delete()
+        storage.save()
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM states WHERE id = %s', (state_id,)), 0)
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM cities WHERE state_id = %s',
+            (state_id,)), 0)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM cities'), 1)
 
 
 @unittest.skipIf(storage_t != 'db', 'Requires database storage.')
