@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """ Console Module """
 import cmd
+import re
 import shlex
 from ast import literal_eval
 import sys
@@ -118,8 +119,8 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """ Create an object of any class"""
-        parts = shlex.split(args)
+        """Create an object with valid key=value parameters."""
+        parts = re.findall(r'(?:[^\s"]|"(?:\\.|[^"\\])*")+', args)
         if not parts:
             print("** class name missing **")
             return
@@ -129,10 +130,22 @@ class HBNBCommand(cmd.Cmd):
         values = {}
         for item in parts[1:]:
             key, separator, value = item.partition('=')
-            if not separator or key in ('id', 'created_at', 'updated_at'):
+            if (not separator or not key.isidentifier()
+                    or key.startswith('_')
+                    or key in ('id', 'created_at', 'updated_at')):
                 continue
-            cast = self.types.get(key, str)
-            values[key] = cast(value.replace('_', ' '))
+            try:
+                if value.startswith('"'):
+                    if not re.fullmatch(r'"(?:\\.|[^"\\])*"', value):
+                        continue
+                    value = shlex.split(value)[0].replace('_', ' ')
+                else:
+                    if '_' in value:
+                        continue
+                    value = float(value) if '.' in value else int(value)
+            except (ValueError, IndexError):
+                continue
+            values[key] = value
         new_instance = self.classes[parts[0]](**values)
         new_instance.save()
         print(new_instance.id)
@@ -140,7 +153,8 @@ class HBNBCommand(cmd.Cmd):
     def help_create(self):
         """ Help information for the create method """
         print("Creates a class of any type")
-        print("[Usage]: create <className>\n")
+        print('[Usage]: create <className> [key=value ...]')
+        print('Values: "quoted_strings", integers, or floats.\n')
 
     def do_show(self, args):
         """ Method to show an individual object """

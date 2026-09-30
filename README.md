@@ -56,6 +56,46 @@ destroy State <id>
 BaseModel is the shared parent class and has no table in database mode.
 City, Place, and Review require valid IDs for their referenced objects.
 
+## Creating objects with parameters
+
+Use `create <Class> key=value ...`. Types come from the value syntax:
+
+- Double-quoted values are strings; underscores become spaces.
+- Escape a double quote inside a string with a backslash.
+- Unquoted values containing a dot are floats; other numbers are integers.
+- Invalid parameters are skipped while valid parameters are saved.
+
+```text
+create State name="California"
+create Place city_id="0001" user_id="0001" name="My_little_house" number_rooms=4 latitude=37.773972 longitude=-122.431297
+```
+
+The Place example uses sample IDs for file storage. Database storage requires
+IDs that reference existing City and User rows.
+
+## Development database setup
+
+Run the development setup script with a MySQL administrator account:
+
+```bash
+mysql -hlocalhost -uroot -p < setup_mysql_dev.sql
+```
+
+It creates `hbnb_dev_db` and the local user `hbnb_dev` with password
+`hbnb_dev_pwd`. The user receives all privileges on `hbnb_dev_db` and only
+SELECT on `performance_schema`. Rerunning the script preserves existing data
+and sets the required development password again.
+
+Start a development console with:
+
+```bash
+HBNB_MYSQL_USER=hbnb_dev HBNB_MYSQL_PWD=hbnb_dev_pwd \
+HBNB_MYSQL_HOST=localhost HBNB_MYSQL_DB=hbnb_dev_db HBNB_TYPE_STORAGE=db \
+python3 console.py
+```
+
+Keep `HBNB_ENV=test` for the separate test database; it resets mapped tables.
+
 ## Original project documentation
 
 <center> <h1>HBNB - The Console</h1> </center>
