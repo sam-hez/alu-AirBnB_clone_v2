@@ -156,3 +156,99 @@ class TestDBReview(ModelChecks, unittest.TestCase):
     """Check review persistence and foreign keys."""
     model = 'Review'
     field = 'text'
+
+
+@unittest.skipIf(storage_t != 'db', 'Requires database storage.')
+class TestDBUserPlaces(DatabaseFixture, unittest.TestCase):
+    """Check required fields, optional values, and place relationships."""
+
+    def test_user_required_fields(self):
+        """Both email and password are required to save a user."""
+        from models.user import User
+        from sqlalchemy.exc import IntegrityError, OperationalError
+        for values in ({'email': 'test@example.com'}, {'password': 'test'}):
+            with self.assertRaises((IntegrityError, OperationalError)):
+                User(**values).save()
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM users'), 1)
+
+    def test_user_optional_names(self):
+        """A user can be saved without first and last names."""
+        user = self.objects['User']
+        for field in ('first_name', 'last_name'):
+            self.assertIsNone(self.sql_value(
+                'SELECT ' + field + ' FROM users WHERE id = %s', (user.id,)))
+
+    def test_place_required_fields(self):
+        """Missing names or parent IDs and invalid IDs reject a place."""
+        from models.place import Place
+        from sqlalchemy.exc import IntegrityError, OperationalError
+        values = {'name': 'Home', 'city_id': self.objects['City'].id,
+                  'user_id': self.objects['User'].id}
+        for field in values:
+            incomplete = values.copy()
+            del incomplete[field]
+            with self.assertRaises((IntegrityError, OperationalError)):
+                Place(**incomplete).save()
+        for field in ('city_id', 'user_id'):
+            invalid = values.copy()
+            invalid[field] = 'missing'
+            with self.assertRaises((IntegrityError, OperationalError)):
+                Place(**invalid).save()
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM places'), 1)
+
+    def test_place_defaults(self):
+        """Counts default to zero and optional data is stored as NULL."""
+        place = self.objects['Place']
+        for field in ('number_rooms', 'number_bathrooms',
+                      'max_guest', 'price_by_night'):
+            self.assertEqual(self.sql_value(
+                'SELECT ' + field + ' FROM places WHERE id = %s',
+                (place.id,)), 0)
+        for field in ('description', 'latitude', 'longitude'):
+            self.assertIsNone(self.sql_value(
+                'SELECT ' + field + ' FROM places WHERE id = %s',
+                (place.id,)))
+
+    def test_relationships(self):
+        """Places link to their owners and cities in both directions."""
+        place = self.objects['Place']
+        user = self.objects['User']
+        city = self.objects['City']
+        self.assertEqual(user.places, [place])
+        self.assertEqual(city.places, [place])
+        self.assertIs(place.user, user)
+        self.assertIs(place.cities, city)
+
+    def check_cascade(self, parent_name):
+        """Delete a separate parent and verify only its places disappear."""
+        from models.user import User
+        from models.place import Place
+        user = User(email='other@example.com', password='test')
+        user.save()
+        city = City(name='Other city', state_id=self.objects['State'].id)
+        city.save()
+        for name in ('House', 'Apartment'):
+            Place(name=name, user_id=user.id, city_id=city.id).save()
+        parent = user if parent_name == 'User' else city
+        parent_id = parent.id
+        table = parent.__tablename__
+        field = 'user_id' if parent_name == 'User' else 'city_id'
+        storage.close()
+        parent = storage.all(parent_name)[parent_name + '.' + parent_id]
+        parent.delete()
+        storage.save()
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM ' + table + ' WHERE id = %s',
+            (parent_id,)), 0)
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM places WHERE ' + field + ' = %s',
+            (parent_id,)), 0)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM places'), 1)
+
+    def test_delete_user_places(self):
+        """Deleting an owner removes the owner's places."""
+        self.check_cascade('User')
+
+    def test_delete_city_places(self):
+        """Deleting a city removes the city's places."""
+        self.check_cascade('City')

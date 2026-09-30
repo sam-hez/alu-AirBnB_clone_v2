@@ -253,3 +253,15 @@ With file storage, `state.cities` is a read-only list of stored cities whose
 `state_id` matches the state. With database storage, `state.cities` and
 `city.state` use a SQLAlchemy relationship. Deleting a state also deletes
 its related cities when the transaction is committed.
+
+## Users and Places in MySQL
+
+Users require an email and password; first and last names are optional.
+Places require a name, a valid city ID, and a valid user ID. Room counts,
+bathroom counts, maximum guests, and nightly prices default to zero.
+Description, latitude, and longitude may be NULL.
+
+A user's places are available through `user.places`, with `place.user`
+pointing back to the user. A city's places are available through
+`city.places`, with `place.cities` pointing back to the city.
+Deleting a user or city also deletes its related places on commit.

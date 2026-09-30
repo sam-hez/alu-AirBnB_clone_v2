@@ -4,7 +4,8 @@ import os
 from models.base_model import BaseModel, Base
 
 if os.getenv('HBNB_TYPE_STORAGE') == 'db':
-    from sqlalchemy import Column, String, Integer, Float, ForeignKey
+    from sqlalchemy import Column, String
+    from sqlalchemy.orm import relationship
 
 
 class User(BaseModel, Base):
@@ -12,10 +13,12 @@ class User(BaseModel, Base):
 
     if os.getenv('HBNB_TYPE_STORAGE') == 'db':
         __tablename__ = 'users'
-        email = Column(String(128), nullable=False, default='')
-        password = Column(String(128), nullable=False, default='')
-        first_name = Column(String(128), default='')
-        last_name = Column(String(128), default='')
+        email = Column(String(128), nullable=False)
+        password = Column(String(128), nullable=False)
+        first_name = Column(String(128))
+        last_name = Column(String(128))
+        places = relationship('Place', backref='user',
+                              cascade='all, delete-orphan')
     else:
         email = ''
         password = ''

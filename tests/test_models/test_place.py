@@ -2,6 +2,7 @@
 """Test the place model behavior."""
 from tests.test_models.test_base_model import test_basemodel
 from models.place import Place
+from models import storage_t
 
 
 class test_Place(test_basemodel):
@@ -16,22 +17,26 @@ class test_Place(test_basemodel):
     def test_city_id(self):
         """Check city id behavior."""
         new = self.value()
-        self.assertEqual(type(new.city_id), str)
+        self.assertEqual(new.city_id,
+                         None if storage_t == 'db' else '')
 
     def test_user_id(self):
         """Check user id behavior."""
         new = self.value()
-        self.assertEqual(type(new.user_id), str)
+        self.assertEqual(new.user_id,
+                         None if storage_t == 'db' else '')
 
     def test_name(self):
         """Check name behavior."""
         new = self.value()
-        self.assertEqual(type(new.name), str)
+        self.assertEqual(new.name,
+                         None if storage_t == 'db' else '')
 
     def test_description(self):
         """Check description behavior."""
         new = self.value()
-        self.assertEqual(type(new.description), str)
+        self.assertEqual(new.description,
+                         None if storage_t == 'db' else '')
 
     def test_number_rooms(self):
         """Check number rooms behavior."""
@@ -56,12 +61,14 @@ class test_Place(test_basemodel):
     def test_latitude(self):
         """Check latitude behavior."""
         new = self.value()
-        self.assertEqual(type(new.latitude), float)
+        self.assertEqual(new.latitude,
+                         None if storage_t == 'db' else 0.0)
 
     def test_longitude(self):
         """Check longitude behavior."""
         new = self.value()
-        self.assertEqual(type(new.longitude), float)
+        self.assertEqual(new.longitude,
+                         None if storage_t == 'db' else 0.0)
 
     def test_amenity_ids(self):
         """Check amenity ids behavior."""

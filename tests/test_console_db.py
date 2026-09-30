@@ -109,3 +109,34 @@ class TestDBConsole(DatabaseFixture, unittest.TestCase):
             self.assertEqual(self.sql_value(
                 'SELECT state_id FROM cities WHERE id = %s', (city_id,)),
                 state_id)
+
+    def test_create_user_and_place(self):
+        """Console parameters persist User and Place fields correctly."""
+        user_id = self.run_command(
+            'create User email="gui@hbtn.io" password="guipwd" '
+            'first_name="Guillaume" last_name="Snow"').strip()
+        for field, value in (('email', 'gui@hbtn.io'),
+                             ('password', 'guipwd'),
+                             ('first_name', 'Guillaume'),
+                             ('last_name', 'Snow')):
+            self.assertEqual(self.sql_value(
+                'SELECT ' + field + ' FROM users WHERE id = %s',
+                (user_id,)), value)
+        place_id = self.run_command(
+            'create Place city_id="{}" user_id="{}" name="Lovely_place" '
+            'number_rooms=3 number_bathrooms=1 max_guest=6 '
+            'price_by_night=120 latitude=37.773972 longitude=-122.431297'
+            .format(self.objects['City'].id, user_id)).strip()
+        for field, value in (('name', 'Lovely place'),
+                             ('city_id', self.objects['City'].id),
+                             ('user_id', user_id), ('number_rooms', 3),
+                             ('number_bathrooms', 1), ('max_guest', 6),
+                             ('price_by_night', 120)):
+            self.assertEqual(self.sql_value(
+                'SELECT ' + field + ' FROM places WHERE id = %s',
+                (place_id,)), value)
+        for field, value in (('latitude', 37.773972),
+                             ('longitude', -122.431297)):
+            self.assertAlmostEqual(self.sql_value(
+                'SELECT ' + field + ' FROM places WHERE id = %s',
+                (place_id,)), value, places=3)
