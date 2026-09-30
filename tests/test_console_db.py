@@ -73,3 +73,39 @@ class TestDBConsole(DatabaseFixture, unittest.TestCase):
         """Unknown database IDs produce the expected console error."""
         self.assertEqual(self.run_command('show State missing'),
                          '** no instance found **\n')
+
+    def test_create_state_without_name(self):
+        """A missing state name must not insert a database row."""
+        from sqlalchemy.exc import IntegrityError, OperationalError
+        before = self.sql_value('SELECT COUNT(*) FROM states')
+        with self.assertRaises((IntegrityError, OperationalError)) as error:
+            self.run_command('create State')
+        self.assertEqual(error.exception.orig.args[0], 1048)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM states'),
+                         before)
+
+    def test_create_city_without_name(self):
+        """An existing state_id cannot replace the required city name."""
+        from sqlalchemy.exc import IntegrityError, OperationalError
+        before = self.sql_value('SELECT COUNT(*) FROM cities')
+        with self.assertRaises((IntegrityError, OperationalError)) as error:
+            self.run_command('create City state_id="{}"'.format(
+                self.objects['State'].id))
+        self.assertEqual(error.exception.orig.args[0], 1048)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM cities'),
+                         before)
+
+    def test_create_named_cities(self):
+        """Both city parameters and converted spaces persist in MySQL."""
+        state_id = self.run_command(
+            'create State name="California"').strip()
+        for name in ('Fremont', 'San_Francisco'):
+            city_id = self.run_command(
+                'create City state_id="{}" name="{}"'.format(
+                    state_id, name)).strip()
+            self.assertEqual(self.sql_value(
+                'SELECT name FROM cities WHERE id = %s', (city_id,)),
+                name.replace('_', ' '))
+            self.assertEqual(self.sql_value(
+                'SELECT state_id FROM cities WHERE id = %s', (city_id,)),
+                state_id)

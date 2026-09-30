@@ -19,7 +19,7 @@ class test_state(test_basemodel):
     def test_name3(self):
         """Check name3 behavior."""
         new = self.value()
-        self.assertEqual(type(new.name), str)
+        self.assertEqual(new.name, None if storage_t == 'db' else '')
 
     @unittest.skipIf(storage_t == 'db', 'Tests the file storage getter.')
     def test_cities(self):

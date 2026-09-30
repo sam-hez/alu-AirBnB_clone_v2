@@ -13,6 +13,8 @@ from console import HBNBCommand, storage
 from models.engine.file_storage import FileStorage
 from models.place import Place
 from models.user import User
+from models.state import State
+from models.city import City
 
 
 @unittest.skipIf(storage_t == 'db', 'Tests JSON file storage only.')
@@ -167,3 +169,37 @@ class TestConsole(unittest.TestCase):
                          "** class doesn't exist **\n")
         self.assertEqual(storage.all(), {})
         self.assertFalse(os.path.exists(self.path))
+
+
+class TestCreateParameters(unittest.TestCase):
+    """Check parameter parsing with either storage engine."""
+
+    def create(self, command, model):
+        """Capture the constructed object without writing to storage."""
+        with patch.object(model, 'save', autospec=True) as save:
+            with patch('sys.stdout', new_callable=io.StringIO) as output:
+                HBNBCommand().onecmd(command)
+        save.assert_called_once()
+        obj = save.call_args[0][0]
+        self.assertEqual(output.getvalue().strip(), obj.id)
+        return obj
+
+    def test_create_state_name(self):
+        """A quoted state name must reach the saved object."""
+        state = self.create('create State name="California"', State)
+        self.assertEqual(state.name, 'California')
+
+    def test_create_city_parameters(self):
+        """Creation must process both state_id and name."""
+        city = self.create(
+            'create City state_id="existing-state" name="Fremont"', City)
+        self.assertEqual(city.state_id, 'existing-state')
+        self.assertEqual(city.name, 'Fremont')
+
+    def test_create_city_spaces(self):
+        """Underscores in quoted names become spaces."""
+        city = self.create(
+            'create City state_id="existing-state" name="San_Francisco"',
+            City)
+        self.assertEqual(city.state_id, 'existing-state')
+        self.assertEqual(city.name, 'San Francisco')

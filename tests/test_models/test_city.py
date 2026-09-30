@@ -2,6 +2,7 @@
 """Test the city model behavior."""
 from tests.test_models.test_base_model import test_basemodel
 from models.city import City
+from models import storage_t
 
 
 class test_City(test_basemodel):
@@ -16,9 +17,9 @@ class test_City(test_basemodel):
     def test_state_id(self):
         """Check state id behavior."""
         new = self.value()
-        self.assertEqual(type(new.state_id), str)
+        self.assertEqual(new.state_id, None if storage_t == 'db' else '')
 
     def test_name(self):
         """Check name behavior."""
         new = self.value()
-        self.assertEqual(type(new.name), str)
+        self.assertEqual(new.name, None if storage_t == 'db' else '')

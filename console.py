@@ -29,6 +29,8 @@ class HBNBCommand(cmd.Cmd):
     if storage_t == 'db':
         del classes['BaseModel']
 
+    valid_classes = classes
+
     dot_cmds = ['all', 'count', 'show', 'destroy', 'update']
     types = {
              'number_rooms': int, 'number_bathrooms': int,
