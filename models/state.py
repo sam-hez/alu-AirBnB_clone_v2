@@ -4,5 +4,5 @@ from models.base_model import BaseModel
 
 
 class State(BaseModel):
-    """ State class """
+    """Represent a state that can contain cities."""
     name = ""
