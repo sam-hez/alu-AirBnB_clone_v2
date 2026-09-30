@@ -3,6 +3,7 @@
 from tests.test_models.test_base_model import test_basemodel
 from models.place import Place
 from models import storage_t
+import unittest
 
 
 class test_Place(test_basemodel):
@@ -70,7 +71,37 @@ class test_Place(test_basemodel):
         self.assertEqual(new.longitude,
                          None if storage_t == 'db' else 0.0)
 
+    @unittest.skipIf(storage_t == 'db', 'Tests file storage IDs.')
     def test_amenity_ids(self):
         """Check amenity ids behavior."""
         new = self.value()
         self.assertEqual(type(new.amenity_ids), list)
+
+    @unittest.skipIf(storage_t == 'db', 'Tests file storage relationships.')
+    def test_file_relationships(self):
+        """Reviews and amenities select only records linked to a place."""
+        from models import storage
+        from models.review import Review
+        from models.amenity import Amenity
+        place = Place()
+        other = Place()
+        review = Review(place_id=place.id, text='Great')
+        review.save()
+        Review(place_id=other.id, text='Other').save()
+        self.assertEqual(place.reviews, [review])
+        review.delete()
+        self.assertEqual(place.reviews, [])
+        amenity = Amenity(name='Wifi')
+        amenity.save()
+        place.amenities = amenity
+        place.amenities = amenity
+        place.amenities = 'invalid'
+        self.assertEqual(place.amenities, [amenity])
+        self.assertEqual(place.amenity_ids, [amenity.id])
+        self.assertEqual(other.amenities, [])
+        place.save()
+        storage.all().clear()
+        storage.reload()
+        restored = storage.all(Place)['Place.' + place.id]
+        self.assertEqual(restored.amenity_ids, [amenity.id])
+        self.assertEqual(restored.amenities[0].name, 'Wifi')

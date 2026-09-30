@@ -265,3 +265,18 @@ A user's places are available through `user.places`, with `place.user`
 pointing back to the user. A city's places are available through
 `city.places`, with `place.cities` pointing back to the city.
 Deleting a user or city also deletes its related places on commit.
+
+## Reviews and amenities
+
+In MySQL, reviews require text, a valid place ID, and a valid user ID.
+Deleting a user or place also deletes its linked reviews. With file storage,
+`place.reviews` returns saved reviews whose `place_id` matches the place.
+
+Amenities require a name in MySQL. Places share amenities through the
+`place_amenity` table. Use `place.amenities.append(amenity)`, then
+`storage.save()` to save a database link. The reverse relationship is
+`amenity.place_amenities`. Deleting a place removes its links without
+deleting shared amenities.
+
+With file storage, assign `place.amenities = amenity` to add its ID,
+then save the place. The getter returns the linked stored amenities.

@@ -140,3 +140,40 @@ class TestDBConsole(DatabaseFixture, unittest.TestCase):
             self.assertAlmostEqual(self.sql_value(
                 'SELECT ' + field + ' FROM places WHERE id = %s',
                 (place_id,)), value, places=3)
+
+    def test_create_review_and_amenity(self):
+        """Console-created reviews and amenities persist their parameters."""
+        review_id = self.run_command(
+            'create Review place_id="{}" user_id="{}" '
+            'text="Amazing_place,_huge_kitchen"'.format(
+                self.objects['Place'].id, self.objects['User'].id)).strip()
+        self.assertEqual(self.sql_value(
+            'SELECT text FROM reviews WHERE id = %s', (review_id,)),
+            'Amazing place, huge kitchen')
+        amenity_id = self.run_command('create Amenity name="Wifi"').strip()
+        self.assertEqual(self.sql_value(
+            'SELECT name FROM amenities WHERE id = %s', (amenity_id,)),
+            'Wifi')
+
+    def test_create_and_show_place_numbers(self):
+        """The complete creation sequence preserves numbers in show."""
+        state_id = self.run_command(
+            'create State name="California"').strip()
+        city_id = self.run_command(
+            'create City state_id="{}" '
+            'name="San_Francisco_is_super_cool"'.format(state_id)).strip()
+        user_id = self.run_command(
+            'create User email="my@me.com" password="pwd" '
+            'first_name="FN" last_name="LN"').strip()
+        place_id = self.run_command(
+            'create Place city_id="{}" user_id="{}" name="My_house" '
+            'description="no_description_yet" number_rooms=4 '
+            'number_bathrooms=1 max_guest=3 price_by_night=100 '
+            'latitude=120.12 longitude=101.4'.format(city_id, user_id)).strip()
+        storage.close()
+        output = self.run_command('show Place ' + place_id)
+        for text in ('My house', 'no description yet', "'number_rooms': 4",
+                     "'number_bathrooms': 1", "'max_guest': 3",
+                     "'price_by_night': 100", "'latitude': 120.12",
+                     "'longitude': 101.4"):
+            self.assertIn(text, output)

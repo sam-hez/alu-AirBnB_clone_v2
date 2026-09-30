@@ -252,3 +252,103 @@ class TestDBUserPlaces(DatabaseFixture, unittest.TestCase):
     def test_delete_city_places(self):
         """Deleting a city removes the city's places."""
         self.check_cascade('City')
+
+
+@unittest.skipIf(storage_t != 'db', 'Requires database storage.')
+class TestDBReviewsAmenities(DatabaseFixture, unittest.TestCase):
+    """Verify review ownership and many-to-many amenity persistence."""
+
+    def test_required_fields(self):
+        """Incomplete reviews and unnamed amenities must not be saved."""
+        from models.review import Review
+        from models.amenity import Amenity
+        from sqlalchemy.exc import IntegrityError, OperationalError
+        values = {'text': 'Great', 'place_id': self.objects['Place'].id,
+                  'user_id': self.objects['User'].id}
+        for field in values:
+            incomplete = values.copy()
+            del incomplete[field]
+            with self.assertRaises((IntegrityError, OperationalError)):
+                Review(**incomplete).save()
+        with self.assertRaises((IntegrityError, OperationalError)):
+            Amenity().save()
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM reviews'), 1)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM amenities'), 1)
+
+    def test_review_relationships(self):
+        """Reviews expose their author and place in both directions."""
+        review = self.objects['Review']
+        user = self.objects['User']
+        place = self.objects['Place']
+        self.assertEqual(user.reviews, [review])
+        self.assertEqual(place.reviews, [review])
+        self.assertIs(review.user, user)
+        self.assertIs(review.place, place)
+
+    def test_delete_place_reviews(self):
+        """Removing a place also removes reviews but keeps the author."""
+        self.objects['Place'].delete()
+        storage.save()
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM reviews'), 0)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM users'), 1)
+
+    def test_delete_review_author(self):
+        """Removing a reviewer preserves a place owned by another user."""
+        from models.user import User
+        from models.review import Review
+        author = User(email='reviewer@example.com', password='test')
+        author.save()
+        Review(user_id=author.id, place_id=self.objects['Place'].id,
+               text='Nice').save()
+        author.delete()
+        storage.save()
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM reviews'), 1)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM places'), 1)
+
+    def test_delete_owner_with_reviews(self):
+        """Deleting an owner removes owned places and all their reviews."""
+        self.objects['User'].delete()
+        storage.save()
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM reviews'), 0)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM places'), 0)
+
+    def test_shared_amenities(self):
+        """Two places share amenities through five distinct join rows."""
+        from models.place import Place
+        from models.amenity import Amenity
+        first = self.objects['Place']
+        second = Place(name='Second', city_id=first.city_id,
+                       user_id=first.user_id)
+        second.save()
+        wifi = self.objects['Amenity']
+        cable = Amenity(name='Cable')
+        cable.save()
+        oven = Amenity(name='Oven')
+        oven.save()
+        first.amenities.extend([wifi, cable])
+        second.amenities.extend([wifi, cable, oven])
+        storage.save()
+        first_id, second_id, wifi_id = first.id, second.id, wifi.id
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM place_amenity'), 5)
+        storage.close()
+        first = storage.all(Place)['Place.' + first_id]
+        second = storage.all(Place)['Place.' + second_id]
+        wifi = storage.all(Amenity)['Amenity.' + wifi_id]
+        self.assertEqual(len(first.amenities), 2)
+        self.assertEqual(len(second.amenities), 3)
+        self.assertCountEqual(wifi.place_amenities, [first, second])
+        first.amenities.remove(wifi)
+        storage.save()
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM place_amenity'), 4)
+        first.delete()
+        storage.save()
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM place_amenity'), 3)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM amenities'), 3)
+        wifi.delete()
+        storage.save()
+        self.assertEqual(self.sql_value(
+            'SELECT COUNT(*) FROM place_amenity'), 2)
+        self.assertEqual(self.sql_value('SELECT COUNT(*) FROM places'), 1)

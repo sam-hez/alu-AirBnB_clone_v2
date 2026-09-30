@@ -48,8 +48,8 @@ class DatabaseFixture:
         """Clear only the dedicated test schema in dependency order."""
         storage.close()
         with self.connection.cursor() as cursor:
-            for table in ('reviews', 'places', 'cities', 'amenities',
-                          'states', 'users'):
+            for table in ('place_amenity', 'reviews', 'places', 'cities',
+                          'amenities', 'states', 'users'):
                 cursor.execute('DELETE FROM ' + table)
 
     def sql_value(self, query, values=()):

@@ -2,6 +2,7 @@
 """Test the amenity model behavior."""
 from tests.test_models.test_base_model import test_basemodel
 from models.amenity import Amenity
+from models import storage_t
 
 
 class test_Amenity(test_basemodel):
@@ -16,4 +17,5 @@ class test_Amenity(test_basemodel):
     def test_name2(self):
         """Check name2 behavior."""
         new = self.value()
-        self.assertEqual(type(new.name), str)
+        self.assertEqual(new.name,
+                         None if storage_t == 'db' else '')

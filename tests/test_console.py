@@ -203,3 +203,16 @@ class TestCreateParameters(unittest.TestCase):
             City)
         self.assertEqual(city.state_id, 'existing-state')
         self.assertEqual(city.name, 'San Francisco')
+
+    def test_create_place_numbers(self):
+        """Creation preserves integer and float values before persistence."""
+        place = self.create(
+            'create Place city_id="city" user_id="user" name="My_house" '
+            'description="no_description_yet" number_rooms=4 '
+            'number_bathrooms=1 max_guest=3 price_by_night=100 '
+            'latitude=120.12 longitude=101.4', Place)
+        for field, value in (('number_rooms', 4), ('number_bathrooms', 1),
+                             ('max_guest', 3), ('price_by_night', 100),
+                             ('latitude', 120.12), ('longitude', 101.4)):
+            self.assertEqual(getattr(place, field), value)
+            self.assertIs(type(getattr(place, field)), type(value))
