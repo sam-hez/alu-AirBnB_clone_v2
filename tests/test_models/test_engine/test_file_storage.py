@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """ Module for testing file storage"""
 import unittest
+from models import storage_t
 from models.base_model import BaseModel
 from models import storage
 import os
@@ -9,6 +10,7 @@ from unittest.mock import patch
 from models.engine.file_storage import FileStorage
 
 
+@unittest.skipIf(storage_t == 'db', 'Tests JSON file storage only.')
 class test_fileStorage(unittest.TestCase):
     """ Class to test the file storage method """
 
@@ -104,3 +106,32 @@ class test_fileStorage(unittest.TestCase):
         """ FileStorage object storage created """
         from models.engine.file_storage import FileStorage
         self.assertEqual(type(storage), FileStorage)
+
+    def test_filter_class(self):
+        """File storage filters by either class object or class name."""
+        from models.user import User
+        base = BaseModel()
+        user = User()
+        expected = {'User.' + user.id: user}
+        self.assertEqual(storage.all(User), expected)
+        self.assertEqual(storage.all('User'), expected)
+        self.assertIn('BaseModel.' + base.id, storage.all())
+
+    def test_delete(self):
+        """Deleting an object removes it without changing other objects."""
+        first = BaseModel()
+        second = BaseModel()
+        first.delete()
+        storage.save()
+        storage.all().clear()
+        storage.reload()
+        self.assertNotIn('BaseModel.' + first.id, storage.all())
+        self.assertIn('BaseModel.' + second.id, storage.all())
+
+    def test_close(self):
+        """Closing file storage reloads the saved object data."""
+        obj = BaseModel()
+        obj.save()
+        storage.all().clear()
+        storage.close()
+        self.assertIn('BaseModel.' + obj.id, storage.all())

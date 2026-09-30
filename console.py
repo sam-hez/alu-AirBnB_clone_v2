@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 """ Console Module """
 import cmd
+import shlex
 from ast import literal_eval
 import sys
 from models.base_model import BaseModel
-from models import storage
+from models import storage, storage_t
 from models.user import User
 from models.place import Place
 from models.state import State
@@ -24,6 +25,9 @@ class HBNBCommand(cmd.Cmd):
                'State': State, 'City': City, 'Amenity': Amenity,
                'Review': Review
               }
+    if storage_t == 'db':
+        del classes['BaseModel']
+
     dot_cmds = ['all', 'count', 'show', 'destroy', 'update']
     types = {
              'number_rooms': int, 'number_bathrooms': int,
@@ -115,14 +119,22 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if not args:
+        parts = shlex.split(args)
+        if not parts:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        if parts[0] not in self.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
+        values = {}
+        for item in parts[1:]:
+            key, separator, value = item.partition('=')
+            if not separator or key in ('id', 'created_at', 'updated_at'):
+                continue
+            cast = self.types.get(key, str)
+            values[key] = cast(value.replace('_', ' '))
+        new_instance = self.classes[parts[0]](**values)
+        new_instance.save()
         print(new_instance.id)
 
     def help_create(self):
@@ -186,7 +198,7 @@ class HBNBCommand(cmd.Cmd):
         key = c_name + "." + c_id
 
         try:
-            del(storage.all()[key])
+            storage.delete(storage.all()[key])
             storage.save()
         except KeyError:
             print("** no instance found **")
@@ -311,7 +323,7 @@ class HBNBCommand(cmd.Cmd):
                     att_val = HBNBCommand.types[att_name](att_val)
 
                 # update dictionary with name, value pair
-                new_dict.__dict__.update({att_name: att_val})
+                setattr(new_dict, att_name, att_val)
 
         new_dict.save()  # save updates to file
 

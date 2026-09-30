@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Test the base model model behavior."""
 from models.base_model import BaseModel
+from models import storage, storage_t
 import unittest
 import datetime
 from uuid import UUID
@@ -54,6 +55,13 @@ class test_basemodel(unittest.TestCase):
     def test_save(self):
         """ Testing save """
         i = self.value()
+        if storage_t == 'db':
+            with patch.object(storage, 'new') as new, \
+                    patch.object(storage, 'save') as save:
+                i.save()
+            new.assert_called_once_with(i)
+            save.assert_called_once_with()
+            return
         i.save()
         key = self.name + "." + i.id
         with open(self.path, 'r') as f:
@@ -81,8 +89,9 @@ class test_basemodel(unittest.TestCase):
     def test_kwargs_one(self):
         """Check kwargs one behavior."""
         n = {'Name': 'test'}
-        with self.assertRaises(KeyError):
-            new = self.value(**n)
+        new = self.value(**n)
+        self.assertEqual(new.Name, 'test')
+        self.assertIsInstance(new.id, str)
 
     def test_id(self):
         """Check id behavior."""

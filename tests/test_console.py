@@ -5,6 +5,7 @@ import json
 import os
 import tempfile
 import unittest
+from models import storage_t
 from unittest.mock import patch
 
 import models
@@ -14,6 +15,7 @@ from models.place import Place
 from models.user import User
 
 
+@unittest.skipIf(storage_t == 'db', 'Tests JSON file storage only.')
 class TestConsole(unittest.TestCase):
     """Check console operations using temporary storage files."""
 

@@ -9,27 +9,52 @@ This fork builds on the original console and web static project by
 **Ezra Nobrega** and **Justin Majetich**. Their documentation is preserved
 below, and their names remain in [AUTHORS](AUTHORS).
 
-## Current scope: tasks 0 and 1
+## Storage and testing
 
-The existing console uses JSON file storage. This stage updates the fork's
-information, fixes bugs, and expands the existing unit tests. DBStorage,
-SQLAlchemy models, and MySQL setup will be added in later tasks.
-Setting `HBNB_TYPE_STORAGE=db` alone does not enable database storage yet.
+File storage is the default. Database storage uses SQLAlchemy 1.4 and MySQL 8.
+Install the dependencies with `python3 -m pip install -r requirements.txt`.
+On Ubuntu, building mysqlclient requires `python3-dev`, `build-essential`,
+`pkg-config`, and `default-libmysqlclient-dev`.
 
-From the repository directory:
+Run file tests and the style check from the repository directory:
 
 ```bash
-python3 console.py
 python3 -m unittest discover tests
-echo "python3 -m unittest discover tests" | bash
-python3 -m pip install 'pycodestyle==2.7.0'
 pycodestyle console.py models tests
 ```
 
-Tests use temporary JSON files so they do not overwrite or delete saved data.
-When DBStorage is implemented, add database tests and use `unittest.skipIf`
-only for tests that do not apply to the selected storage engine. MySQL
-validation is pending that implementation and a configured test database.
+Create the test database using a MySQL administrator account:
+
+```bash
+mysql -u root -p < setup_mysql_test.sql
+```
+
+Run the database tests:
+
+```bash
+HBNB_ENV=test HBNB_MYSQL_USER=hbnb_test HBNB_MYSQL_PWD=hbnb_test_pwd \
+HBNB_MYSQL_HOST=localhost HBNB_MYSQL_DB=hbnb_test_db HBNB_TYPE_STORAGE=db \
+python3 -m unittest discover tests
+```
+
+`HBNB_MYSQL_PORT` defaults to 3306 and can be changed for a local test server.
+`HBNB_ENV=test` resets mapped tables when storage starts. Use it only with
+an expendable test database. The integration fixtures require `hbnb_test_db`
+and verify database changes using the MySQL driver directly. File-only and
+database-only tests use `unittest.skipIf` in the other storage mode.
+File tests use temporary JSON files and preserve existing saved data.
+
+Examples supported by both engines:
+
+```text
+create State name="New_York"
+all State
+update State <id> name "California"
+destroy State <id>
+```
+
+BaseModel is the shared parent class and has no table in database mode.
+City, Place, and Review require valid IDs for their referenced objects.
 
 ## Original project documentation
 
