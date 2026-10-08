@@ -398,3 +398,11 @@ Each task keeps the earlier routes and listens on `0.0.0.0:5000`.
 Underscores in text values become spaces. All routes use
 `strict_slashes=False`. Number routes use Flask's integer converter;
 decimal values and words return HTTP 404.
+
+## States and cities in Flask (tasks 6–10)
+
+The Flask applications now include an odd/even number template,
+alphabetical state and city lists, and individual state pages.
+See [web_flask/README.md](web_flask/README.md) for routes and commands.
+The storage-backed pages work with either JSON or MySQL storage
+and close storage after each request.
