@@ -301,3 +301,33 @@ The script adds its include to the default site and enabled sites,
 preserves their other routes, checks the configuration, and restarts
 Nginx. It uses Ubuntu's standard `sites-available` and `sites-enabled` layout. Repeated runs reuse the
 directories and do not add duplicate includes.
+
+## Package and deploy static files (tasks 1 and 2)
+
+Use Fabric3 version 1.14.post1 in a compatible Python environment.
+From the repository root, create an archive:
+
+```bash
+fab -f 1-pack_web_static.py do_pack
+```
+
+`do_pack()` creates `versions/web_static_YYYYMMDDHHMMSS.tgz` and
+returns its path, or `None` on failure. Generated archives are ignored
+by Git.
+
+Deploy the resulting archive to both web servers:
+
+```bash
+fab -f 2-do_deploy_web_static.py \
+    do_deploy:archive_path=versions/web_static_YYYYMMDDHHMMSS.tgz \
+    -u ubuntu -i ~/.ssh/alu_web_infra
+```
+
+Replace the timestamp with the actual archive name. Fabric uses the two
+server IPs in `env.hosts`. On each server, `do_deploy()` uploads the
+archive to `/tmp/`, extracts it into its release directory, removes the
+uploaded archive, and replaces `current` with a link to that release.
+It returns `True` on success or `False` on failure. Earlier release
+directories are retained.
+
+Check `http://<server-ip>/hbnb_static/0-index.html` after deployment.
