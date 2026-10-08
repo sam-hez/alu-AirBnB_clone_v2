@@ -343,3 +343,33 @@ fab -f 3-deploy_web_static.py deploy -u ubuntu -i ~/.ssh/alu_web_infra
 Fabric runs the task on both hosts listed in `env.hosts`.
 `deploy()` calls `do_pack()`, returns `False` if packaging fails,
 and otherwise returns the result of `do_deploy(archive_path)`.
+
+## Web framework (tasks 0 and 1)
+
+The applications in `web_flask` use
+[Flask](https://flask.palletsprojects.com/en/stable/quickstart/) to map
+URLs to Python functions. Install Flask in your Python environment:
+
+```bash
+python3 -m pip install Flask
+```
+
+Run one application at a time from the repository root:
+
+```bash
+python3 -m web_flask.0-hello_route
+# Or stop the first application with Ctrl+C and run:
+python3 -m web_flask.1-hbnb_route
+```
+
+Both applications listen on `0.0.0.0:5000`. The home route returns
+`Hello HBNB!`. Task 1 also provides `/hbnb`, which returns `HBNB`.
+All routes use `strict_slashes=False`, so `/hbnb/` also works.
+
+Check the running task 1 application from another terminal:
+
+```bash
+curl http://127.0.0.1:5000/
+curl http://127.0.0.1:5000/hbnb
+curl http://127.0.0.1:5000/hbnb/
+```
