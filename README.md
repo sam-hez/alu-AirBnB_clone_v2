@@ -331,3 +331,15 @@ It returns `True` on success or `False` on failure. Earlier release
 directories are retained.
 
 Check `http://<server-ip>/hbnb_static/0-index.html` after deployment.
+
+## Full static deployment (task 3)
+
+Package and deploy the website with one command:
+
+```bash
+fab -f 3-deploy_web_static.py deploy -u ubuntu -i ~/.ssh/alu_web_infra
+```
+
+Fabric runs the task on both hosts listed in `env.hosts`.
+`deploy()` calls `do_pack()`, returns `False` if packaging fails,
+and otherwise returns the result of `do_deploy(archive_path)`.
