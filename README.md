@@ -280,3 +280,24 @@ deleting shared amenities.
 
 With file storage, assign `place.amenities = amenity` to add its ID,
 then save the place. The getter returns the linked stored amenities.
+
+## Prepare static deployment (task 0)
+
+Run the setup script as root on each Ubuntu web server:
+
+```bash
+sudo ./0-setup_web_static.sh
+curl http://localhost/hbnb_static/index.html
+```
+
+The script installs Nginx if needed, creates the releases and shared
+directories under `/data/web_static/`, and creates a test HTML page.
+It resets `current` to point to `releases/test` on each run and assigns
+`/data/` to `ubuntu:ubuntu`.
+
+An Nginx configuration include serves `/hbnb_static/` using an
+[alias](https://nginx.org/en/docs/http/ngx_http_core_module.html#alias).
+The script adds its include to the default site and enabled sites,
+preserves their other routes, checks the configuration, and restarts
+Nginx. It uses Ubuntu's standard `sites-available` and `sites-enabled` layout. Repeated runs reuse the
+directories and do not add duplicate includes.
