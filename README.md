@@ -406,3 +406,8 @@ alphabetical state and city lists, and individual state pages.
 See [web_flask/README.md](web_flask/README.md) for routes and commands.
 The storage-backed pages work with either JSON or MySQL storage
 and close storage after each request.
+
+The final web framework page is `/hbnb_filters`, served by
+`python3 -m web_flask.10-hbnb_filters`. It displays alphabetical
+state, city, and amenity menus with scrolling popovers.
+See [web_flask/README.md](web_flask/README.md) for setup and usage.

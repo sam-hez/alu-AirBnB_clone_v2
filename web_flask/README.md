@@ -68,3 +68,30 @@ storage. These applications use `storage.all(State)` and
 `state.cities`, and call `storage.close()` after each request.
 For JSON storage this reloads the file; for MySQL it releases the
 current SQLAlchemy session.
+
+## Task 11: HBNB filters
+
+Run the filter page with file storage:
+
+```bash
+python3 -m web_flask.10-hbnb_filters
+```
+
+Or run it with the prepared MySQL database:
+
+```bash
+HBNB_MYSQL_USER=hbnb_dev HBNB_MYSQL_PWD=hbnb_dev_pwd \
+HBNB_MYSQL_HOST=localhost HBNB_MYSQL_DB=hbnb_dev_db \
+HBNB_TYPE_STORAGE=db python3 -m web_flask.10-hbnb_filters
+```
+
+Open `http://127.0.0.1:5000/hbnb_filters`. Hover over States to
+see each state's cities, or over Amenities to see the amenity list.
+All lists are alphabetical. Both menus scroll and have a maximum
+height of 300px.
+
+The page uses `storage.all(State)`, `state.cities`, and
+`storage.all(Amenity)`, then closes storage after each request.
+CSS and images are served from `web_flask/static/`.
+The PNG favicon uses the existing ICO favicon's image.
+The Search button is part of this task's layout.
