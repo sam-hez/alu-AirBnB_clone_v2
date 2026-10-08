@@ -11,7 +11,7 @@ below, and their names remain in [AUTHORS](AUTHORS).
 
 ## Storage and testing
 
-File storage is the default. Database storage uses SQLAlchemy 1.4 and MySQL 8.
+File storage is the default. Database storage uses SQLAlchemy 1.3 or 1.4 and MySQL 8.
 Install the dependencies with `python3 -m pip install -r requirements.txt`.
 On Ubuntu, building mysqlclient requires `python3-dev`, `build-essential`,
 `pkg-config`, and `default-libmysqlclient-dev`.

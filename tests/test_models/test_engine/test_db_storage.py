@@ -52,3 +52,15 @@ class TestDBStorage(DatabaseFixture, unittest.TestCase):
             storage.save()
         State(name='Nevada').save()
         self.assertEqual(self.sql_value('SELECT COUNT(*) FROM states'), 2)
+
+    def test_close_refreshes_external_inserts(self):
+        """Closing exposes rows committed by an independent connection."""
+        self.assertEqual(len(storage.all(State)), 1)
+        for index in (1, 2):
+            with self.connection.cursor() as cursor:
+                cursor.execute(
+                    'INSERT INTO states (id, name, created_at, updated_at) '
+                    'VALUES (%s, %s, NOW(), NOW())',
+                    ('external-state-' + str(index), 'External'))
+            storage.close()
+            self.assertEqual(len(storage.all(State)), 1 + index)

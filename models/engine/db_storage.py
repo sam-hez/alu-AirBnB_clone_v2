@@ -2,7 +2,7 @@
 """Persist model instances in MySQL using SQLAlchemy."""
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.engine import URL
+from urllib.parse import quote
 from sqlalchemy.orm import scoped_session, sessionmaker
 from models.base_model import Base
 from models.user import User
@@ -22,12 +22,12 @@ class DBStorage:
 
     def __init__(self):
         """Connect using environment variables and reset only in test mode."""
-        url = URL.create(
-            'mysql+mysqldb', username=os.getenv('HBNB_MYSQL_USER'),
-            password=os.getenv('HBNB_MYSQL_PWD'),
-            host=os.getenv('HBNB_MYSQL_HOST', 'localhost'),
-            port=int(os.getenv('HBNB_MYSQL_PORT', '3306')),
-            database=os.getenv('HBNB_MYSQL_DB'))
+        url = 'mysql+mysqldb://{}:{}@{}:{}/{}'.format(
+            quote(os.getenv('HBNB_MYSQL_USER', ''), safe=''),
+            quote(os.getenv('HBNB_MYSQL_PWD', ''), safe=''),
+            os.getenv('HBNB_MYSQL_HOST', 'localhost'),
+            int(os.getenv('HBNB_MYSQL_PORT', '3306')),
+            os.getenv('HBNB_MYSQL_DB', ''))
         self.__engine = create_engine(url, pool_pre_ping=True)
         if os.getenv('HBNB_ENV') == 'test':
             Base.metadata.drop_all(self.__engine)
