@@ -373,3 +373,28 @@ curl http://127.0.0.1:5000/
 curl http://127.0.0.1:5000/hbnb
 curl http://127.0.0.1:5000/hbnb/
 ```
+
+## Variable routes and templates (tasks 2–5)
+
+Run one application at a time from the repository root:
+
+```bash
+python3 -m web_flask.2-c_route
+python3 -m web_flask.3-python_route
+python3 -m web_flask.4-number_route
+python3 -m web_flask.5-number_template
+```
+
+Stop the current application with Ctrl+C before starting another.
+Each task keeps the earlier routes and listens on `0.0.0.0:5000`.
+
+- Task 2: `/c/is_fun` returns `C is fun`.
+- Task 3: `/python/is_magic` returns `Python is magic`;
+  `/python` and `/python/` return `Python is cool`.
+- Task 4: `/number/89` returns `89 is a number`.
+- Task 5: `/number_template/89` renders `templates/5-number.html`
+  with `Number: 89` inside an H1 element in the BODY.
+
+Underscores in text values become spaces. All routes use
+`strict_slashes=False`. Number routes use Flask's integer converter;
+decimal values and words return HTTP 404.
